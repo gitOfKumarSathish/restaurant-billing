@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import http from 'http-status-codes';
 import menuRoutes from './routes/menu.routes.js';
+import orderRoutes from './routes/order.routes.js';
 import { ZodError } from 'zod';
 
 const { StatusCodes } = http;
@@ -19,6 +20,14 @@ app.get('/health', (req, res, next) => {
 });
 
 app.use('/menu', menuRoutes);
+app.use('/orders', orderRoutes);
+
+// 404 handler
+app.use((req, res, next) => {
+    res.status(StatusCodes.NOT_FOUND).json({ message: 'Resource not found' });
+});
+
+// Error handler
 
 app.use((err, req, res, next) => {
     if (err instanceof ZodError) {
