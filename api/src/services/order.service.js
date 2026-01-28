@@ -29,13 +29,14 @@ const getOrdersService = async (req, res, next) => {
         }));
         // // console.log({ enrichedItems });
         const totalPrice = enrichedItems.reduce((acc, item) => acc + item.total, 0);
-        // console.log({ totalPrice });
+        const grandTotal = orderItems.discounts?.available ? totalPrice - (totalPrice * (orderItems.discounts.percentage / 100)) : totalPrice;
         const finalOrder = {
             orderId: new Date().getTime().toString(),
             items: enrichedItems,
-            totalPrice
+            totalPrice,
+            grandTotal: grandTotal,
+            discounts: orderItems.discounts
         };
-        // console.log({ finalOrder });
         await Order.create(finalOrder);
         return res.status(200).json({ message: "Orders received successfully", data: finalOrder });
     }

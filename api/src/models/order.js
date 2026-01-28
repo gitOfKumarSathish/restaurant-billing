@@ -10,7 +10,12 @@ const orderSchema = new mongoose.Schema({
         total: Number,
         _id: false
     }],
-    totalPrice: Number
+    discounts: {
+        available: Boolean,
+        percentage: Number
+    },
+    totalPrice: Number,
+    grandTotal: Number
 }, {
     timestamps: true,
     toJSON: {
