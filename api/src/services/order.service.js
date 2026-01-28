@@ -45,6 +45,21 @@ const getOrdersService = async (req, res, next) => {
     }
 };
 
+const getOrderByIdService = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+        return res.status(200).json({ message: "Order fetched successfully", data: order });
+    }
+    catch (err) {
+        next(err);
+    }
+}
+
 export {
-    getOrdersService
+    getOrdersService,
+    getOrderByIdService
 };
