@@ -8,7 +8,7 @@ import { Menu } from '../models/menu.model';
     providedIn: 'root'
 })
 export class MenuService {
-    private apiUrl = '/menu'; // Proxy handles the domain
+    private apiUrl = '/api/menu'; // Proxy handles the domain
 
     constructor(private http: HttpClient) { }
 

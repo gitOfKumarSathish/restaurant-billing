@@ -26,4 +26,5 @@ export interface OrderResponse {
     totalPrice: number;
     grandTotal: number;
     discounts: any;
+    createdAt: string;
 }

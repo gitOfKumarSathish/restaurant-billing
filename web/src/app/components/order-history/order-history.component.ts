@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../services/order.service';
@@ -20,7 +20,8 @@ export class OrderHistoryComponent {
 
     constructor(
         private orderService: OrderService,
-        private pdfService: PdfService
+        private pdfService: PdfService,
+        private cd: ChangeDetectorRef
     ) { }
 
     searchOrder(): void {
@@ -33,12 +34,15 @@ export class OrderHistoryComponent {
         this.orderService.getOrderById(this.searchId).subscribe({
             next: (res) => {
                 this.order = res.data;
+                console.log("order", this.order);
                 this.isLoading = false;
+                this.cd.detectChanges();
             },
             error: (err) => {
                 console.error('Search failed', err);
                 this.error = 'Order not found. Please check the ID.';
                 this.isLoading = false;
+                this.cd.detectChanges();
             }
         });
     }

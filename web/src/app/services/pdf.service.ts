@@ -28,7 +28,7 @@ export class PdfService {
         // Order Info
         doc.setFontSize(10);
         doc.text(`Order ID: ${order.orderId}`, 14, 50);
-        doc.text(`Date: ${new Date().toLocaleString()}`, 14, 56);
+        doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`, 14, 56);
 
         // Items Table
         const tableBody = order.items.map(item => [

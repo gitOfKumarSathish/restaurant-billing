@@ -3,11 +3,29 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { OrderRequest, OrderResponse } from '../models/order.model';
 
+
+export interface DashboardStats {
+    date: string;
+    totalOrders: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+    totalDiscountGiven: number;
+    topSellingItems: Array<{
+        itemName: string;
+        quantity: number;
+        revenue: number;
+    }>;
+    peakHours: Array<{
+        hour: string; // e.g., "13:00"
+        orderCount: number;
+    }>;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class OrderService {
-    private apiUrl = '/orders';
+    private apiUrl = '/api/orders';
 
     constructor(private http: HttpClient) { }
 
@@ -17,5 +35,10 @@ export class OrderService {
 
     getOrderById(id: string): Observable<{ message: string, data: OrderResponse }> {
         return this.http.get<{ message: string, data: OrderResponse }>(`${this.apiUrl}/${id}`);
+    }
+
+    getDashboardStats(date?: string): Observable<{ message: string, data: DashboardStats }> {
+        const url = date ? `${this.apiUrl}/stats?date=${date}` : `${this.apiUrl}/stats`;
+        return this.http.get<{ message: string, data: DashboardStats }>(url);
     }
 }

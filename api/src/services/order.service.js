@@ -48,18 +48,135 @@ const getOrdersService = async (req, res, next) => {
 const getOrderByIdService = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const order = await Order.findById(id);
-        if (!order) {
+        console.log({ id });
+        const orderCheck = await Order.aggregate([
+            {
+                $match: {
+                    orderId: id,
+                }
+            },
+            // {
+            //     $project: {
+            //         orderId: 1,
+            //         items: 1,
+            //         discounts: 1,
+            //         totalPrice: 1,
+            //         grandTotal: 1
+            //     }
+            // }
+        ]);
+        console.log({ orderCheck });
+        // const order = await Order.findById(id);
+        if (!orderCheck || orderCheck.length === 0) {
             return res.status(404).json({ message: "Order not found" });
         }
-        return res.status(200).json({ message: "Order fetched successfully", data: order });
+        return res.status(200).json({ message: "Order fetched successfully", data: orderCheck[0] });
     }
     catch (err) {
         next(err);
     }
-}
+};
+const getDashboardStatsService = async (req, res, next) => {
+    try {
+        const { date } = req.query;
+        let matchStage = {};
+
+        if (date) {
+            const startOfDay = new Date(date);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            matchStage = {
+                createdAt: {
+                    $gte: startOfDay,
+                    $lte: endOfDay
+                }
+            };
+        }
+
+        // 1. General Stats (Revenue, Count, Discounts)
+        const generalStats = await Order.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: null,
+                    totalOrders: { $sum: 1 },
+                    totalRevenue: { $sum: "$grandTotal" },
+                    totalBasePrice: { $sum: "$totalPrice" }
+                }
+            }
+        ]);
+
+        const stats = generalStats[0] || { totalOrders: 0, totalRevenue: 0, totalBasePrice: 0 };
+        const totalDiscountGiven = stats.totalBasePrice - stats.totalRevenue;
+        const averageOrderValue = stats.totalOrders > 0 ? stats.totalRevenue / stats.totalOrders : 0;
+
+        // 2. Top Selling Items
+        const topSellingItems = await Order.aggregate([
+            { $match: matchStage },
+            { $unwind: "$items" },
+            {
+                $group: {
+                    _id: "$items.itemName",
+                    itemName: { $first: "$items.itemName" },
+                    quantity: { $sum: "$items.quantity" },
+                    revenue: { $sum: "$items.total" }
+                }
+            },
+            { $sort: { quantity: -1 } },
+            { $limit: 5 },
+            { $project: { _id: 0, itemName: 1, quantity: 1, revenue: 1 } }
+        ]);
+
+        // 3. Peak Hours
+        const peakHours = await Order.aggregate([
+            { $match: matchStage },
+            {
+                $project: {
+                    hour: { $hour: "$createdAt" } // Extract hour (0-23)
+                }
+            },
+            {
+                $group: {
+                    _id: "$hour",
+                    orderCount: { $sum: 1 }
+                }
+            },
+            { $sort: { orderCount: -1 } },
+            { $limit: 5 },
+            {
+                $project: {
+                    _id: 0,
+                    hour: {
+                        $concat: [
+                            { $toString: "$_id" },
+                            ":00"
+                        ]
+                    },
+                    orderCount: 1
+                }
+            }
+        ]);
+
+        const responseData = {
+            date: date || "All Time",
+            totalOrders: stats.totalOrders,
+            totalRevenue: stats.totalRevenue,
+            averageOrderValue: parseFloat(averageOrderValue.toFixed(2)),
+            totalDiscountGiven: parseFloat(totalDiscountGiven.toFixed(2)),
+            topSellingItems,
+            peakHours
+        };
+
+        return res.status(200).json({ message: "Stats fetched successfully", data: responseData });
+
+    } catch (err) {
+        next(err);
+    }
+};
 
 export {
     getOrdersService,
-    getOrderByIdService
+    getOrderByIdService,
+    getDashboardStatsService
 };

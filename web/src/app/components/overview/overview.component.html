@@ -1,0 +1,132 @@
+<div class="container mx-auto p-6 max-w-7xl animate-fade-in">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+
+    <div class="flex items-center gap-4">
+      <label class="text-gray-600 font-medium">Filter Date:</label>
+      <input type="date" [(ngModel)]="selectedDate" (change)="onDateChange()"
+        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+    </div>
+  </div>
+
+  @if (isLoading) {
+  <div class="flex justify-center py-20">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+  }
+
+  @if (!isLoading && stats) {
+  <div class="space-y-8">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total Revenue -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-gray-500 text-sm font-medium uppercase mb-2">Total Revenue</div>
+        <div class="text-3xl font-bold text-green-600">₹{{ stats.totalRevenue | number:'1.2-2' }}</div>
+      </div>
+
+      <!-- Total Orders -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-gray-500 text-sm font-medium uppercase mb-2">Total Orders</div>
+        <div class="text-3xl font-bold text-blue-600">{{ stats.totalOrders }}</div>
+      </div>
+
+      <!-- Average Order Value -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-gray-500 text-sm font-medium uppercase mb-2">Avg. Order Value</div>
+        <div class="text-3xl font-bold text-indigo-600">₹{{ stats.averageOrderValue | number:'1.2-2' }}</div>
+      </div>
+
+      <!-- Total Discounts -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="text-gray-500 text-sm font-medium uppercase mb-2">Discounts Given</div>
+        <div class="text-3xl font-bold text-orange-600">₹{{ stats.totalDiscountGiven | number:'1.2-2' }}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Top Selling Items -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+        <div class="px-6 py-4 border-b border-gray-100">
+          <h3 class="text-lg font-bold text-gray-800">Top Selling Items</h3>
+        </div>
+        <div class="p-6">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th class="pb-3">Item Name</th>
+                <th class="pb-3 text-right">Quantity Sold</th>
+                <th class="pb-3 text-right">Revenue</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (item of stats.topSellingItems; track item.itemName) {
+              <tr>
+                <td class="py-3 text-gray-900 font-medium">{{ item.itemName }}</td>
+                <td class="py-3 text-right text-gray-600">{{ item.quantity }}</td>
+                <td class="py-3 text-right text-green-600 font-medium">₹{{ item.revenue | number:'1.2-2' }}</td>
+              </tr>
+              } @empty {
+              <tr>
+                <td colspan="3" class="py-4 text-center text-gray-500">No sales data for this period.</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Quick Actions / Peak Hours -->
+      <div class="space-y-6">
+        <!-- Peak Hours -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800">Peak Hours</h3>
+          </div>
+          <div class="p-6">
+            @for (peak of stats.peakHours; track peak.hour) {
+            <div class="flex justify-between items-center mb-3 last:mb-0">
+              <span class="text-gray-600 bg-gray-100 px-3 py-1 rounded-md text-sm">{{ peak.hour }}</span>
+              <span class="text-gray-900 font-bold">{{ peak.orderCount }} orders</span>
+            </div>
+            } @empty {
+            <div class="text-gray-500 text-sm italic">Not enough data.</div>
+            }
+          </div>
+        </div>
+
+        <!-- Quick Invoice -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800">Quick Invoice</h3>
+          </div>
+          <div class="p-6">
+            <div class="flex gap-2 mb-2">
+              <input type="text" [(ngModel)]="printOrderId" placeholder="Order ID"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              <button (click)="printInvoice()" [disabled]="printLoading || !printOrderId"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+                @if (!printLoading) {
+                <span>Print</span>
+                }
+                @if (printLoading) {
+                <span>...</span>
+                }
+              </button>
+            </div>
+            @if (printError) {
+            <p class="text-xs text-red-600">{{ printError }}</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (!isLoading && !stats) {
+  <div class="text-center py-20 bg-white rounded-xl border border-gray-200 mt-8">
+    <p class="text-gray-500 text-lg">No data available. Please check the backend connection.</p>
+  </div>
+  }
+</div>

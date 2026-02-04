@@ -19,8 +19,8 @@ app.get('/health', (req, res, next) => {
     res.status(StatusCodes.OK).json({ status: 'OK', message: 'API is healthy' });
 });
 
-app.use('/menu', menuRoutes);
-app.use('/orders', orderRoutes);
+app.use('/api/menu', menuRoutes);
+app.use('/api/orders', orderRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
