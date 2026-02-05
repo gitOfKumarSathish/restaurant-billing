@@ -3,6 +3,8 @@ import orderController from "../controllers/orderController.js";
 const router = Router();
 
 router.post('/', orderController.getOrders);
+router.get('/stats', orderController.getStats)
+router.get('/all', orderController.getAllOrders)
 router.get('/:id', orderController.getOrderById);
 
 export default router;

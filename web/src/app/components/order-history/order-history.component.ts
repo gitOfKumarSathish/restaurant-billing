@@ -13,8 +13,13 @@ import { OrderResponse } from '../../models/order.model';
     styleUrls: ['./order-history.component.css']
 })
 export class OrderHistoryComponent {
+    orders: OrderResponse[] = [];
+    filteredOrders: OrderResponse[] = [];
     searchId: string = '';
-    order: OrderResponse | null = null;
+
+    selectedOrder: OrderResponse | null = null;
+    isModalOpen: boolean = false;
+
     isLoading: boolean = false;
     error: string = '';
 
@@ -24,32 +29,50 @@ export class OrderHistoryComponent {
         private cd: ChangeDetectorRef
     ) { }
 
-    searchOrder(): void {
-        if (!this.searchId.trim()) return;
+    ngOnInit(): void {
+        this.fetchAllOrders();
+    }
 
+    fetchAllOrders(): void {
         this.isLoading = true;
-        this.error = '';
-        this.order = null;
-
-        this.orderService.getOrderById(this.searchId).subscribe({
+        this.orderService.getAllOrders().subscribe({
             next: (res) => {
-                this.order = res.data;
-                console.log("order", this.order);
+                this.orders = res.data || [];
+                this.filteredOrders = this.orders;
                 this.isLoading = false;
                 this.cd.detectChanges();
             },
             error: (err) => {
-                console.error('Search failed', err);
-                this.error = 'Order not found. Please check the ID.';
+                console.error('Failed to fetch orders', err);
+                this.error = 'Failed to load order history.';
                 this.isLoading = false;
                 this.cd.detectChanges();
             }
         });
     }
 
-    downloadReceipt(): void {
-        if (this.order) {
-            this.pdfService.generateReceipt(this.order);
+    filterOrders(): void {
+        if (!this.searchId.trim()) {
+            this.filteredOrders = this.orders;
+        } else {
+            const query = this.searchId.toLowerCase().trim();
+            this.filteredOrders = this.orders.filter(order =>
+                order.orderId.toLowerCase().includes(query)
+            );
         }
+    }
+
+    viewOrder(order: OrderResponse): void {
+        this.selectedOrder = order;
+        this.isModalOpen = true;
+    }
+
+    closeModal(): void {
+        this.isModalOpen = false;
+        this.selectedOrder = null;
+    }
+
+    downloadReceipt(order: OrderResponse): void {
+        this.pdfService.generateReceipt(order);
     }
 }

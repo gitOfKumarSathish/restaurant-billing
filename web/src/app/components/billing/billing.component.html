@@ -9,25 +9,60 @@
       <pre>{{ menuItems | json }}</pre>
     </div> -->
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div *ngFor="let item of menuItems"
-        class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col justify-between border border-gray-100">
-        <div>
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="font-bold text-lg text-gray-900">{{ item.itemName }}</h3>
-            <span class="text-primary-600 font-bold bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
-              ₹{{ item.itemPrice }}
-            </span>
-          </div>
-          <p class="text-gray-500 text-sm mb-4 line-clamp-2">{{ item.description }}</p>
-        </div>
+    <div class="h-full flex flex-col">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="flex justify-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
 
-        <button (click)="addToCart(item)" [disabled]="!item.availabilityStatus"
-          [ngClass]="{'opacity-50 cursor-not-allowed': !item.availabilityStatus}"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
-          <span>Add to Order</span>
-          <span *ngIf="!item.availabilityStatus" class="text-xs">(Sold Out)</span>
-        </button>
+      <!-- Empty/Error State -->
+      <div *ngIf="!isLoading && (error || menuItems.length === 0)"
+        class="flex-1 flex flex-col items-center justify-center text-center p-8 animate-fade-in">
+        <div class="bg-gray-100 p-6 rounded-full mb-4">
+          <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+            </path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">
+          {{ error ? 'Oops! Something went wrong' : 'No Menu Items Found' }}
+        </h3>
+        <p class="text-gray-500 mb-8 max-w-sm">
+          {{ error ? error : 'It looks like your menu is empty. Add some items to start taking orders.' }}
+        </p>
+
+        <a routerLink="/inventory"
+          class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+          <svg class="mr-2 -ml-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Manage Menu
+        </a>
+      </div>
+
+      <!-- Menu Grid -->
+      <div *ngIf="!isLoading && !error && menuItems.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+        <div *ngFor="let item of menuItems"
+          class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col justify-between border border-gray-100">
+          <div>
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-bold text-lg text-gray-900">{{ item.itemName }}</h3>
+              <span class="text-primary-600 font-bold bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
+                ₹{{ item.itemPrice }}
+              </span>
+            </div>
+            <p class="text-gray-500 text-sm mb-4 line-clamp-2">{{ item.description }}</p>
+          </div>
+
+          <button (click)="addToCart(item)" [disabled]="!item.availabilityStatus"
+            [ngClass]="{'opacity-50 cursor-not-allowed': !item.availabilityStatus}"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <span>Add to Order</span>
+            <span *ngIf="!item.availabilityStatus" class="text-xs">(Sold Out)</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

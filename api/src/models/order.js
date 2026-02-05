@@ -20,7 +20,7 @@ const orderSchema = new mongoose.Schema({
     timestamps: true,
     toJSON: {
         transform(doc, ret) {
-            ret.orderId = ret._id;
+            ret.id = ret._id; // Use 'id' for the Object ID if needed, or just let _id be removed. user wants custom orderId.
             delete ret._id;
             delete ret.__v;
             return ret;

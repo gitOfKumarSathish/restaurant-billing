@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderService, DashboardStats } from '../../services/order.service';
@@ -21,7 +21,8 @@ export class OverviewComponent implements OnInit {
 
     constructor(
         private orderService: OrderService,
-        private pdfService: PdfService
+        private pdfService: PdfService,
+        private cd: ChangeDetectorRef
     ) { }
 
     ngOnInit(): void {
@@ -30,16 +31,17 @@ export class OverviewComponent implements OnInit {
 
     fetchStats(): void {
         this.isLoading = true;
+
         this.orderService.getDashboardStats(this.selectedDate).subscribe({
             next: (res) => {
                 this.stats = res.data;
                 this.isLoading = false;
+                this.cd.detectChanges();
             },
             error: (err) => {
                 console.error('Failed to fetch stats', err);
                 this.isLoading = false;
-                // Mock data for UI development if API fails (Optional: Remove before production)
-                // this.loadMockData(); 
+                this.cd.detectChanges();
             }
         });
     }

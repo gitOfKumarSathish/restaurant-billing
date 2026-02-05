@@ -41,4 +41,8 @@ export class OrderService {
         const url = date ? `${this.apiUrl}/stats?date=${date}` : `${this.apiUrl}/stats`;
         return this.http.get<{ message: string, data: DashboardStats }>(url);
     }
+
+    getAllOrders(): Observable<{ message: string, data: OrderResponse[] }> {
+        return this.http.get<{ message: string, data: OrderResponse[] }>(`${this.apiUrl}/all`);
+    }
 }

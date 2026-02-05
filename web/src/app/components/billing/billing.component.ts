@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { MenuService } from '../../services/menu.service';
 import { OrderService } from '../../services/order.service';
 import { PdfService } from '../../services/pdf.service';
@@ -14,7 +15,7 @@ interface CartItem extends Menu {
 @Component({
     selector: 'app-billing',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, RouterModule],
     templateUrl: './billing.component.html',
     styleUrls: ['./billing.component.css']
 })
@@ -24,6 +25,7 @@ export class BillingComponent implements OnInit {
     discountPercentage: number = 0;
     discountAvailable: boolean = false;
     isLoading: boolean = false;
+    error: string = '';
 
     constructor(
         private menuService: MenuService,
@@ -33,24 +35,25 @@ export class BillingComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
-        console.log('BillingComponent initialized');
         this.loadMenu();
     }
 
     loadMenu(): void {
-        console.log('Calling loadMenu...');
+        this.isLoading = true;
+        this.error = '';
+
         this.menuService.getAllMenuItems().subscribe({
             next: (items) => {
-                console.log('Menu items received in component:', items);
-                this.menuItems = items;
-                console.log('this.menuItems updated:', this.menuItems);
-                this.cdr.detectChanges(); // Force change detection
+                this.menuItems = items || [];
+                this.isLoading = false;
+                this.cdr.detectChanges();
             },
             error: (err) => {
-                console.error('Failed to load menu in component:', err);
-                alert('Failed to load menu: ' + err.message);
-            },
-            complete: () => console.log('Menu loading completed')
+                console.error('Failed to load menu:', err);
+                this.error = 'Unable to load menu items. Please check your connection or try again.';
+                this.isLoading = false;
+                this.cdr.detectChanges();
+            }
         });
     }
 
