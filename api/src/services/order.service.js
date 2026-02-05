@@ -76,104 +76,6 @@ const getOrderByIdService = async (req, res, next) => {
         next(err);
     }
 };
-const getDashboardStatsService = async (req, res, next) => {
-    try {
-        const { date } = req.query;
-        let matchStage = {};
-
-        if (date) {
-            const startOfDay = new Date(date);
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            matchStage = {
-                createdAt: {
-                    $gte: startOfDay,
-                    $lte: endOfDay
-                }
-            };
-        }
-
-        // 1. General Stats (Revenue, Count, Discounts)
-        const generalStats = await Order.aggregate([
-            { $match: matchStage },
-            {
-                $group: {
-                    _id: null,
-                    totalOrders: { $sum: 1 },
-                    totalRevenue: { $sum: "$grandTotal" },
-                    totalBasePrice: { $sum: "$totalPrice" }
-                }
-            }
-        ]);
-
-        const stats = generalStats[0] || { totalOrders: 0, totalRevenue: 0, totalBasePrice: 0 };
-        const totalDiscountGiven = stats.totalBasePrice - stats.totalRevenue;
-        const averageOrderValue = stats.totalOrders > 0 ? stats.totalRevenue / stats.totalOrders : 0;
-
-        // 2. Top Selling Items
-        const topSellingItems = await Order.aggregate([
-            { $match: matchStage },
-            { $unwind: "$items" },
-            {
-                $group: {
-                    _id: "$items.itemName",
-                    itemName: { $first: "$items.itemName" },
-                    quantity: { $sum: "$items.quantity" },
-                    revenue: { $sum: "$items.total" }
-                }
-            },
-            { $sort: { quantity: -1 } },
-            { $limit: 5 },
-            { $project: { _id: 0, itemName: 1, quantity: 1, revenue: 1 } }
-        ]);
-
-        // 3. Peak Hours
-        const peakHours = await Order.aggregate([
-            { $match: matchStage },
-            {
-                $project: {
-                    hour: { $hour: "$createdAt" } // Extract hour (0-23)
-                }
-            },
-            {
-                $group: {
-                    _id: "$hour",
-                    orderCount: { $sum: 1 }
-                }
-            },
-            { $sort: { orderCount: -1 } },
-            { $limit: 5 },
-            {
-                $project: {
-                    _id: 0,
-                    hour: {
-                        $concat: [
-                            { $toString: "$_id" },
-                            ":00"
-                        ]
-                    },
-                    orderCount: 1
-                }
-            }
-        ]);
-
-        const responseData = {
-            date: date || "All Time",
-            totalOrders: stats.totalOrders,
-            totalRevenue: stats.totalRevenue,
-            averageOrderValue: parseFloat(averageOrderValue.toFixed(2)),
-            totalDiscountGiven: parseFloat(totalDiscountGiven.toFixed(2)),
-            topSellingItems,
-            peakHours
-        };
-
-        return res.status(200).json({ message: "Stats fetched successfully", data: responseData });
-
-    } catch (err) {
-        next(err);
-    }
-};
 
 const getStatusService = async (req, res, next) => {
     try {
@@ -229,11 +131,11 @@ const getStatusService = async (req, res, next) => {
         ]);
 
         // 3. Peak Hours
-        const peakHours = await Order.aggregate([
+        const peakHoursRaw = await Order.aggregate([
             { $match: matchStage },
             {
                 $project: {
-                    hour: { $hour: "$createdAt" } // Extract hour (0-23)
+                    hour: { $hour: { date: "$createdAt", timezone: "+05:30" } } // Extract hour (0-23) in IST
                 }
             },
             {
@@ -243,20 +145,39 @@ const getStatusService = async (req, res, next) => {
                 }
             },
             { $sort: { orderCount: -1 } },
-            { $limit: 5 },
-            {
-                $project: {
-                    _id: 0,
-                    hour: {
-                        $concat: [
-                            { $toString: "$_id" },
-                            ":00"
-                        ]
-                    },
-                    orderCount: 1
-                }
-            }
+            { $limit: 5 }
         ]);
+
+        // 4. Top Items Per Hour (Enrichment)
+        const peakHours = await Promise.all(peakHoursRaw.map(async (peak) => {
+            const hour = peak._id; // 0-23
+
+            // Find top items for this specific hour
+            const topItems = await Order.aggregate([
+                {
+                    $match: {
+                        ...matchStage,
+                        $expr: { $eq: [{ $hour: { date: "$createdAt", timezone: "+05:30" } }, hour] }
+                    }
+                },
+                { $unwind: "$items" },
+                {
+                    $group: {
+                        _id: "$items.itemName",
+                        count: { $sum: "$items.quantity" }
+                    }
+                },
+                { $sort: { count: -1 } },
+                { $limit: 3 }, // Top 3 items
+                { $project: { _id: 0, itemName: "$_id", count: 1 } }
+            ]);
+
+            return {
+                hour: `${hour}:00`,
+                orderCount: peak.orderCount,
+                topItems
+            };
+        }));
 
         const responseData = {
             date: date || "All Time",
@@ -289,7 +210,6 @@ const getAllOrdersService = async (req, res, next) => {
 export {
     getOrdersService,
     getOrderByIdService,
-    getDashboardStatsService,
     getStatusService,
     getAllOrdersService
 };  

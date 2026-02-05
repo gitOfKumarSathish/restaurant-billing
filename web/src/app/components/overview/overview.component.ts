@@ -18,6 +18,7 @@ export class OverviewComponent implements OnInit {
     printOrderId: string = '';
     printError: string = '';
     printLoading: boolean = false;
+    maxRevenue: number = 0;
 
     constructor(
         private orderService: OrderService,
@@ -35,6 +36,7 @@ export class OverviewComponent implements OnInit {
         this.orderService.getDashboardStats(this.selectedDate).subscribe({
             next: (res) => {
                 this.stats = res.data;
+                this.maxRevenue = Math.max(...(this.stats?.topSellingItems.map(i => i.revenue) || [0]), 1); // Avoid div by zero
                 this.isLoading = false;
                 this.cd.detectChanges();
             },

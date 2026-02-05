@@ -18,6 +18,7 @@ export interface DashboardStats {
     peakHours: Array<{
         hour: string; // e.g., "13:00"
         orderCount: number;
+        topItems: Array<{ itemName: string; count: number }>;
     }>;
 }
 

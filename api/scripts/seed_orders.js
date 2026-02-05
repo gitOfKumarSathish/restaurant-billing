@@ -36,7 +36,7 @@ const seedOrders = async () => {
         // Reset to start of today locally for cleaner logic, though we'll randomise the time
         today.setHours(0, 0, 0, 0);
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 205; i++) {
             // 1. Random Items
             const numberOfItems = getRandomInt(1, 4); // 1 to 4 items per order
             const orderItems = [];
